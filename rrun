@@ -1,0 +1,156 @@
+#!/usr/bin/env perl
+
+use strict;
+use warnings;
+
+=head1
+
+Robust Run - a way to run a script in a robust way by 
+	a) preventing run away processes by specifying a time limit for the script to run
+	b) allowing a mechanism to retry the script for a specified number of attempts
+Rubustness is achieved by creating an "observer" process (parent) that watches over a "child" executing the script.
+
+Usage:
+	% rrun limit=<TIME_LIMIT> attempts=<NUMBER_OF_ATTEMPTS> pause=<PAUSE_BETWEEN_ATTEMPTS> command=<COMMAND>
+	
+	Runs the "<COMMAND>" within in a TIME_LIMIT.
+		If the command fails to run to completion within the time limit (seconds),
+		the job and all the children are killed - in this case, job emits a message detailing 
+		the failure and exits with failure code. If used in a crontab, a job failure 
+		automatically sends email alert to the user.
+
+	If <COMMAND> fails to successfully complete - either becuase of <TIME_LIMIT> or becuase of bad (aka non-zero) exit code,
+	job is rerun for specified <NUMBER_OF_ATTEMPTS> with a <PAUSE_BETWEEN_ATTEMPTS> seconds between attempts.
+	
+=cut
+
+use CGI;
+use Proc::Killfam;
+use Sys::Hostname;
+use URI::Encode qw(uri_encode uri_decode);
+
+my @q = ();
+for my $a (@ARGV) {
+	my ($n, $v) = split('=', $a);
+	push(@q, uri_encode($n, { encode_reserved => 1 }) . '=' . uri_encode($v, { encode_reserved => 1 }));
+}
+my $q = CGI->new(join(';', @q));
+
+my $limit = $q->param('limit');
+my $attempts = $q->param('attempts') || 1;
+my $pause = $q->param('pause') || 0;
+
+my $command = $q->param('command');
+
+my $verbose = $q->param('verbose') || 0;
+
+if (!$limit or $limit !~ /^\d+$/ or ($attempts and $attempts !~ /^\d+$/) or ($pause and $pause !~ /^\d+$/) or !$command) {
+	print <<EOF;
+
+Robust Run - a way to run a script in a robust way by 
+	a) preventing run away processes by specifying a time limit for the script to run
+	b) allowing a mechanism to retry the script for a specified number of attempts
+Rubustness is achieved by creating an "observer" process (parent) that watches over a "child" executing the script.
+
+Usage:
+	% rrun limit=<TIME_LIMIT> attempts=<NUMBER_OF_ATTEMPTS> pause=<PAUSE_BETWEEN_ATTEMPTS> command=<COMMAND>
+	
+	Runs the "<COMMAND>" within in a TIME_LIMIT.
+		If the command fails to run to completion within the time limit (seconds),
+		the job and all the children are killed - in this case, job emits a message detailing 
+		the failure and exits with failure code. If used in a crontab, a job failure 
+		automatically sends email alert to the user.
+
+	If <COMMAND> fails to successfully complete - either becuase of <TIME_LIMIT> or becuase of bad (aka non-zero) exit code,
+	job is rerun for specified <NUMBER_OF_ATTEMPTS> with a <PAUSE_BETWEEN_ATTEMPTS> seconds between attempts.
+
+EOF
+	exit(1);
+
+}
+
+my $attempt_count = 1;
+my $debug_prefix = "|>";
+
+AGAIN:
+
+my $child_process_id = undef; ### Child PID
+my $child_exit_status_16bit = undef; ### Exit Status of Child Process
+
+$child_process_id = fork();
+if (!defined($child_process_id)) {
+	die "${debug_prefix}Resources not available - could not fork a process\n";
+} elsif (0 == $child_process_id) {
+	### Child Process to run the command
+	exec $command;
+} else {
+	# Parent process watches over child
+	print "${debug_prefix}child pid = $child_process_id\n" if ($verbose);
+	eval {
+		local $SIG{ALRM} = sub { die "alarm\n" }; # NB: \n required
+		alarm($limit);
+		my $return_val = waitpid($child_process_id,0);
+		$child_exit_status_16bit = $?; ### 16 Bit Exit Status of Child Process
+
+		print "${debug_prefix}return_val : $return_val\n" if ($verbose); ### $return_val should be same as $child_process_id
+		print "${debug_prefix}child_exit_status_16bit : $child_exit_status_16bit\n" if ($verbose);
+
+		alarm(0);
+	};
+	my $eval_exception = $@;
+
+	### if NO eval_exception and child_exit_status is GOOD, we are DONE - Parent can exit with SUCCESS
+	if (!$eval_exception and defined($child_exit_status_16bit) and 0 == $child_exit_status_16bit) {
+		print "${debug_prefix}All is well - SUCCESS\n" if ($verbose);
+		exit(0);
+	}
+
+	### propagate unexpected errors
+	if ($eval_exception and $eval_exception ne "alarm\n") {
+		### Something unplanned happened and it requires attention
+		die $eval_exception;
+	}
+
+	my $number_of_killed_processes = 0;
+
+	### if eval_exception is related to TIMEOUT, celanup the running processes 
+	if ("$eval_exception" eq "alarm\n") {
+		### Child did not complete in allotted time and requires cleanup (child as well as descendents)
+		if (kill(0, $child_process_id)) { 
+			### If the child is still running, kill it and 
+			### also recursively kill all its children
+			$number_of_killed_processes = killfam('TERM', $child_process_id);
+		}
+	}
+
+	print <<EOF if ($verbose);
+${debug_prefix}Attempt : $attempt_count
+${debug_prefix}Command : $command
+${debug_prefix}child_exit_status_16bit : ${ \($child_exit_status_16bit || 'NA') }
+${debug_prefix}Message : killed pid=${child_process_id} and all its children (total number of processes killed = $number_of_killed_processes)
+${debug_prefix}===
+EOF
+	$attempt_count++;
+
+	if ($attempt_count > $attempts) {
+		my $child_exit_value = -1; 	### If command had to be terminated, 'rrun' will exit with this status.
+						### Otherwise, 'rrun' will exit with the same status that child exited with.
+
+		if (defined($child_exit_status_16bit)) {
+			my $signal = $child_exit_status_16bit & 127;
+			$child_exit_value = ($signal ? 128+$signal : ($child_exit_status_16bit >> 8));
+			print "${debug_prefix}Message: Signal $signal caused the command to exit\n" if ($signal);
+			print "${debug_prefix}Message: Exhausted all alternatives and hence exit with last attempt's exit value ($child_exit_value)\n";
+			exit($child_exit_value);
+		} else {
+			print "${debug_prefix}Message: Exhausted all alternatives and hence exit with FAILURE status ($child_exit_value)\n";
+			exit($child_exit_value);
+		}
+	} else {
+		### Pause for sometime and the RETRY
+		print "${debug_prefix}Wait for $pause seconds ...\n" if ($verbose);
+		sleep($pause);
+		print "${debug_prefix}Attempt: $attempt_count ...\n";
+		goto AGAIN;
+	}
+}
