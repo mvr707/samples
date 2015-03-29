@@ -3,7 +3,10 @@
 use strict;
 use warnings;
 
+### Gnu Multi Precision library
 use Math::GMP;
+
+### Continued Fraction Algorithm http://www.cs.utsa.edu/~wagner/pi/ruby/pi_works.html
 
 $| = 1;
 
