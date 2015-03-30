@@ -7,6 +7,7 @@ use warnings;
 use Math::GMP;
 
 ### Continued Fraction Algorithm http://www.cs.utsa.edu/~wagner/pi/ruby/pi_works.html
+### Pi query allows one to search 200M digits http://www.angio.net/pi/piquery.html
 
 $| = 1;
 
