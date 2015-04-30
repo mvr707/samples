@@ -31,4 +31,6 @@ for my $i (@ARGV) {
 }
 
 # Usage:
-#	bash $ scip=t.pl 2015{01..12}{01..31}
+#	bash$ perl -MSmart::Comments script.pl 20150430 20150614
+#
+# 	bash$ script.pl 2015{01..12}{01..31}
