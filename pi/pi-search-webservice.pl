@@ -21,9 +21,6 @@ use JSON;
 
 my $agent = WWW::Mechanize->new();
 
-my $header;
-my $data = [];
-
 for my $i (@ARGV) {
 	my $response = decode_json $agent->post('http://www.angio.net/newpi/piquery', [q => $i])->content();
 	### verbose: $response 
