@@ -1,0 +1,28 @@
+#!/usr/bin/perl							  #!/usr/bin/env perl6
+								  
+use strict;							  #use strict;
+use warnings;							  #use warnings;
+								  
+### Gnu Multi Precision library					  ### Gnu Multi Precision library
+use Math::GMP;							  # use Math::GMP;
+								  
+### Continued Fraction Algorithm http://www.cs.utsa.edu/~wagner/p ### Continued Fraction Algorithm http://www.cs.utsa.edu/~wagner/p
+### Pi query allows one to search 200M digits http://www.angio.ne ### Pi query allows one to search 200M digits http://www.angio.ne
+								  
+$| = 1;								  #$| = 1;
+								  
+my ($k, $a, $b, $a1, $b1) = (Math::GMP->new(2), Math::GMP->new(4) #my ($k, $a, $b, $a1, $b1) = (Math::GMP->new(2), Math::GMP->new(4
+								  my ($k, $a, $b, $a1, $b1) = (2, 4, 1, 12, 4);
+while (1) {							  
+  my ($p, $q, $d, $d1) = (Math::GMP->new(0), Math::GMP->new(0), M while (1) {
+  ($p, $q, $k) = ($k*$k, 2*$k+1, $k+1);				    #my ($p, $q, $d, $d1) = (Math::GMP->new(0), Math::GMP->new(0),
+  ($a, $b, $a1, $b1) = ($a1, $b1, $p*$a+$q*$a1, $p*$b+$q*$b1);	    my ($p, $q, $d, $d1) = (0, 0, 0, 0);
+  ($d, $d1) = ($a/$b, $a1/$b1);					    ($p, $q, $k) = ($k*$k, 2*$k+1, $k+1);
+  while ($d == $d1) {						    ($a, $b, $a1, $b1) = ($a1, $b1, $p*$a+$q*$a1, $p*$b+$q*$b1);
+    print $d;							    ($d, $d1) = ($a div $b, $a1 div $b1);
+    ($a, $a1) = (10*($a%$b), 10*($a1%$b1));			    while ($d == $d1) {
+    ($d, $d1) = ($a/$b, $a1/$b1);				      print $d;
+  }								      ($a, $a1) = (10*($a%$b), 10*($a1%$b1));
+}								      ($d, $d1) = ($a div $b, $a1 div $b1);
+								    }
+								  }
