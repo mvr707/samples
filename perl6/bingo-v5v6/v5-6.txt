@@ -1,89 +1,68 @@
 #!/usr/bin/env perl						  #!/usr/bin/env perl6
-
-use strict;							  my $in = shift @*ARGS;
-use warnings;							  my @draw = @*ARGS;
-use Data::Dumper;
-$Data::Dumper::Sortkeys = 1;					  my $h;
-
-my $in = shift;							  if "$in.perl".IO.e {
-my @draw = @ARGV;						   $h = EVAL "$in.perl".IO.slurp;
-								   # say $h.perl;
-my $h = {};							  } else {
-								   my $file = "$in.txt";
-if (-e "${in}.perl") {						   my $t = [];
- $h = do "${in}.perl";						   my ($player, $board);
-} else {
- open (my $fh, '<', "${in}.txt") or die;			   my $fh = open $file, :r;
- my $t = [];
- my ($player, $board);						   while (defined my $line = $fh.get) {
-								    # say $line;
- while (my $line = <$fh>) {					    $line = $line.trim;
-  my ($key, $val);						    my ($key, $val);
-  next if ($line =~ /^\s*$/);					    next if ($line ~~ /^\s*$/);
-  chomp($line);							    ### got: $line
-  ### got: $line						    if ($line ~~ /Player:\s*(.*)\s*$/) {
-  if ($line =~ /Player:\s*(.*)\s*$/) {				     $player = split(':', $line)[1];
-   $player = $1;						     my $tmp = $fh.get;
-   my $tmp = <$fh>;						     if ($tmp ~~ /Board:\s*(.*)\s*$/) {
-   if ($tmp =~ /Board:\s*(.*)\s*$/) {				      $board = split(':', $tmp)[1];
-    $board = $1;						     }
-   }								     my $id = "{$board}:{$player}";
-   my $id = "$board:$player";					     for 0..4 -> $i {
-   for my $i (0..4) {						      $key = "{$id}:h{$i+1}";
-    $key = $id . ':' . 'h' . ($i+1);				      $val = join(',', sort @($t.[$i]));;
-    $val = join(',', sort @{$t->[$i]});;			      #$h.{$val} ||= [];
-    $h->{$val} ||= [];						      push($h.{$val}, $key);
-    push(@{$h->{$val}}, $key);					     }
-   }								     for 0..4 -> $j {
-   for my $j (0..4) {						      $key = "{$id}:v{$j+1}";
-    $key = $id . ':' . 'v' . ($j+1);				      $val = join(',', sort $t.[0][$j],$t.[1][$j],$t.[2][$j],$t.[3]
-    $val = join(',', sort $t->[0][$j],$t->[1][$j],$t->[2][$j],$t-     #$h.{$val} ||= [];
-    $h->{$val} ||= [];						      push($h.{$val}, $key);
-    push(@{$h->{$val}}, $key);					     }
-   }								     $key = "{$id}:df";
-								     $val = join(',', sort $t.[0][0],$t.[1][1],$t.[2][2],$t.[3][3],
-   $key = "$id:df";						     #$h.{$val} ||= [];
-   $val = join(',', sort $t->[0][0],$t->[1][1],$t->[2][2],$t->[3]    push($h.{$val}, $key);
-   push(@{$h->{$val}}, $key);
-								     $key = "{$id}:db";
-   $key = "$id:db";						     $val = join(',', sort $t.[0][4],$t.[1][3],$t.[2][2],$t.[3][1],
-   $val = join(',', sort $t->[0][4],$t->[1][3],$t->[2][2],$t->[3]    #$h.{$val} ||= [];
-   push(@{$h->{$val}}, $key);					     push($h.{$val}, $key);
-
-   $t = [];							     $t = [];
-  } else {							    } else {
-   chomp($line);						     my $tmp = [split(' ', $line)];
-   push(@$t, [split(' ', $line)]);				     push($t, $tmp);
-  }								    }
- }								   }
- close($fh);							   $fh.close;
-
- open($fh, '>'. "${in}.perl") or die;				   $fh = open "{$in}.perl", :w;
- print $fh Data::Dumper->Dump([$h],['h']);			   $fh.say($h.perl);
- close($fh);							   $fh.close;
+								  
+use strict;							  my $game = 0;
+use warnings;							  my %draws;
+use Data::Dumper;						  
+$Data::Dumper::Sortkeys = 1;					  for (5,27,46,55,67), (14,23,32,47,62), (39,45,44,42,35), (69,49,1
+								  		my %h;
+my $game = 0;							  		%h{$_} = $_;
+my $draws = {};							  		$game++;
+for ([5,27,46,55,67], [14,23,32,47,62], [39,45,44,42,35], [69,49, 		%draws{$game} = %h;
+		my $h;								  }
+		@$h{@$_} = @$_;							  
+		$game++;							  my %winners;
+		$draws ->{$game} = $h;						  
+}								  sub examine(%in)
+								  {
+my $winners;							  	for %in.kv -> $id, $bingo {
+								  		# %draws.keys.map({ %winners{$_}.push($id) if ($b
+sub examine							  		
+{								  		for %draws.keys -> $g {
+	my %in = @_;							  			if ($bingo.elems == %draws{$g}{@($bingo)}
+	while (my ($k, $v) = each %in) {				  				%winners{$g}.push($id);
+		my @bingo = @$v;						  			}
+		map { push(@{$winners->{$_}}, $k) if (@bingo == g		  		}
+	}								  	}
 }								  }
-
-sub smartmatch							  sub smartmatch($draw, $bingo)
+								  
+### Parse Block							  ### Parse Block
 {								  {
- my (%draw, %bingo);						   my (%draw, %bingo);
- @draw{split(',', $_[0])} = 1;					   %draw{split(',', $draw)} = 1;
- @bingo{split(',', $_[1])} = 1;					   %bingo{split(',', $bingo)} = 1;
- for my $i (keys %bingo) {					   for %bingo.keys -> $i {
-  next if ($i !~ /^\d+$/);					    next if !($i ~~ /^\d+$/);
-  return 0 if (!exists $draw{$i});				    return 0 if !(%draw{$i}:exists);
- }								   }
- return 1;							   return 1;
+	open (my $fh, '<', "bingo.txt") or die;				  	my $fh = open "bingo.txt", :r;
+	my $t = [];							  	my @t = ();
+	my ($player, $board);						  	my ($player, $board);
+								  
+	while (my $line = <$fh>) {					  	while (defined my $line = $fh.get) {
+		next if ($line =~ /^\s*$/);					  		next if ($line ~~ /^\s*$/);
+		chomp($line);							  		$line = $line.trim;
+		if ($line =~ /Player:\s*(.*)\s*$/) {				  		if ($line ~~ /Player/) {
+			$player = $1;							  			$player = $line.split(':')[1];
+			my $tmp = <$fh>;						  			my $tmp = $fh.get;
+			if ($tmp =~ /Board:\s*(.*)\s*$/) {				  			if ($tmp ~~ /Board/) {
+				$board = $1;							  				$board = $tmp.split(':')[1];
+			}								  			}
+			my $id = "$board:$player";					  			my $id = "{$board}:{$player}";
+								  
+			examine("${id}:h1" => $t->[0],					  			examine({"{$id}:h1" => @t[0],
+				"${id}:h2" => $t->[1],						  				"{$id}:h2" => @t[1],
+				"${id}:h3" => $t->[2],						  				"{$id}:h3" => @t[2],
+				"${id}:h4" => $t->[3],						  				"{$id}:h4" => @t[3],
+				"${id}:h5" => $t->[4],						  				"{$id}:h5" => @t[4],
+											  			
+				"${id}:v1" => [ $t->[0][0],$t->[1				  				"{$id}:v1" => [ @t[0][0],@t[1][0]
+				"${id}:v2" => [ $t->[0][1],$t->[1				  				"{$id}:v2" => [ @t[0][1],@t[1][1]
+				"${id}:v3" => [ $t->[0][2],$t->[1				  				"{$id}:v3" => [ @t[0][2],@t[1][2]
+				"${id}:v4" => [ $t->[0][3],$t->[1				  				"{$id}:v4" => [ @t[0][3],@t[1][3]
+				"${id}:v5" => [ $t->[0][4],$t->[1				  				"{$id}:v5" => [ @t[0][4],@t[1][4]
+								  
+				"${id}:df" => [ $t->[0][0],$t->[1				  				"{$id}:df" => [ @t[0][0],@t[1][1]
+				"${id}:db" => [ $t->[0][4],$t->[1				  				"{$id}:db" => [ @t[0][4],@t[1][3]
+								  
+			$t = [];							  			@t = ();
+		} else {							  		} else {
+			push(@$t, [grep { /\d/ } split(' ', $line			  			push(@t, [$line.split(' ').grep(/\d/)]);
+		}								  		}
+	}								  	}
+	close($fh);							  	$fh.close;
 }								  }
-
-for my $d (@draw) {						  for @draw -> $d {
- print "draw = $d\n";						   print "draw = $d\n";
- my $winners = [];						   my $winners = [];
- for my $i (keys %$h) {						   for $h.keys -> $i {
-  if (smartmatch($d, $i)) {					    if (smartmatch($d, $i)) {
-   push(@$winners, @{$h->{$i}});				     push(@$winners, @($h.{$i}));
-  }								    }
- }								   }
- ### Done							   ### Done
- print Data::Dumper->Dump([$winners], ['Winners']);		   say $winners;
-}								  }
-
+								  
+print Data::Dumper->Dump([$winners], ['Winners']);		  %winners.say;
