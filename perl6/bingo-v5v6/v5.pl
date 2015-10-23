@@ -60,7 +60,7 @@ my $winners;
    for my $g (keys %$draws) {
     my $draw = $draws->{$g};
     # IF bingo card has less than 4 numbers from the drawing, no need to go further
-    if (scalar(grep { defined } @{$draws->{$g}}{@all}) >= 4) {
+    if ((grep { defined } @{$draws->{$g}}{@all}) >= 4) {
      for my $k (keys %in) {
       push(@{$winners->{$g}}, "${id}:${k}") if (@{$in{$k}} == grep { defined } @{$draws->{$g}}{@{$in{$k}}});
      }

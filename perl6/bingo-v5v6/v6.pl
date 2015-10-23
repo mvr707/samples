@@ -15,21 +15,17 @@ my %winners;
 ### Parse Block
 {
  my @lines = 'bingo.txt'.IO.lines;
- my @t = ();
- my ($player, $board);
-
- my $index = 0;
- my $line_count = @lines.elems;
+ my ($index, $line_count, $player, $board, @t) = (0,  @lines.elems);
 
  while ($index < $line_count) {
   my $line = @lines[$index++];
   next if ($line ~~ /^\s*$/);
   $line = $line.trim;
-  if ($line ~~ /Player/) {
-   $player = $line.split(':')[1];
+  if ($line ~~ /Player \: (.*)/) {
+   $player = $0.trim;
    my $tmp = @lines[$index++];
-   if ($tmp ~~ /Board/) {
-    $board = $tmp.split(':')[1];
+   if ($tmp ~~ /Board \: (.*) /) {
+    $board = $0.trim;
    }
    my $id = "{$board}:{$player}";
 
