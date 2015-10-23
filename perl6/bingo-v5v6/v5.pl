@@ -18,8 +18,7 @@ my $winners;
 
 ### Parse Block
 {
- my @lines;
- { open (my $fh, '<', "bingo.txt") or die; local ($/) = undef; @lines = split("\n", <$fh>); close($fh); }
+ my @lines = split("\n", do { local(@ARGV, $/) = "bingo.txt"; <> });
  my $t = [];
  my ($player, $board);
 
