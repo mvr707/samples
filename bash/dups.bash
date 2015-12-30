@@ -1,15 +1,17 @@
 #!/usr/bin/env bash
 
 ###
-### Problem: Input File has one ID stored per line. Find nd report duplicates if any.
+### Problem: Input File has one ID stored per line. Find and report duplicates if any.
 ###
-### Report duplicates in three cloumns in decresing order of frequency
+### Report duplicates in three cloumns in decresing order of frequency. E.g.
+###
 ### 		Frequency	ID	Lines
-###
+################################################################
+###		3		342	4,5,6
+###		2		1234	2,8
+###		2		asdf	1,23
 
-verbose=${verbose:-0}  ### set default value for debug messages
-### One can invoke via commandline, e.g.
-###	$ verbose=1 ./dups.bash dups.input
+verbose=${verbose:-0}
 
 file=$1
 
@@ -26,13 +28,19 @@ do
         IDs[$index]=$line
         let index=index+1
         let count['"$line"']+=1
-        lookup["$line"]+=",$index"
+	if [[ -z ${lookup["$line"]} ]]
+	then
+        	lookup["$line"]="$index"
+	else
+        	lookup["$line"]+=",$index"
+	fi
 done < $file
 
 if (( $verbose > 0 ))
 then
 	echo "= IDs ="
-	printf "%s\n" ${IDs[@]}
+	for i in ${!IDs[@]}; do echo "$i -> ${IDs[$i]}"; done
+	# printf "%s\n" ${IDs[@]}
 	echo "==="
 fi
 
@@ -57,6 +65,7 @@ do
                 echo "${count[$i]}	$i		${lookup[$i]}"
         fi
 done | sort -nr
+
 
 
 # Generate test cases
