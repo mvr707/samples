@@ -10,5 +10,6 @@ for @*ARGS[0].IO.lines {
 }
 
 for %input.keys.sort: { %input{$^b}<count> <=> %input{$^a}<count> } {
-	say "%input{$_}<count>\t$_\t%input{$_}<lines>.join(',')" if %input{$_}<count> > 1;
+        last if %input{$_}<count> == 1;
+        say "%input{$_}<count>\t$_\t%input{$_}<lines>.join(',')";
 }
