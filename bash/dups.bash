@@ -7,7 +7,9 @@
 ### 		Frequency	ID	Lines
 ###
 
-verbose=0
+### verbose=0 - for debug messages
+### One can invoke via commandline, e.g.
+###	$ verbose=1 ./dups.bash dups.input
 
 file=$1
 
