@@ -61,6 +61,6 @@ real	0m3.169s
 user	0m3.100s
 sys	0m0.068s
 
-% diff go.out5 go.out6
+% diff out5 out6
 % 
 
