@@ -49,13 +49,13 @@ DETAILS:
 
 SOLUTION:
 
-% time perl unscramble.p5 > go.out5
+% time perl unscramble.p5 > out5
 
 real	0m0.040s
 user	0m0.040s
 sys	0m0.000s
 
-% time perl6 unscramble.p6 > go.out6
+% time perl6 unscramble.p6 > out6
 
 real	0m3.169s
 user	0m3.100s
