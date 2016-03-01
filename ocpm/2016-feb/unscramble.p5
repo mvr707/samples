@@ -1,0 +1,97 @@
+#!/usr/bin/env perl
+
+use strict;
+use warnings;
+
+use Data::Dumper;
+
+my %dict = (
+	zero	=> 0,
+	one	=> 1,
+	two	=> 2,
+	three	=> 3,
+	four	=> 4,
+	five	=> 5,
+	six	=> 6,
+	seven	=> 7,
+	eight	=> 8,
+	nine	=> 9,
+	ten	=> 10,
+	eleven		=> 11,
+	twelve		=> 12,
+	thirteen	=> 13,
+	fourteen	=> 14,
+	fifteen		=> 15,
+	sixteen		=> 16,
+	seventeen	=> 17,
+	eighteen	=> 18,
+	nineteen	=> 19,
+	twenty		=> 20,
+	thirty	=> 30,
+	forty	=> 40,
+	fifty	=> 50,
+	sixty	=> 60,
+	seventy	=> 70,
+	eighty	=> 80,
+	ninety	=> 90,
+	hundred	=> 100,
+	thousand	=> 1000,
+);
+
+my $wordcounts = {};	# words   -> _normalized
+my $numeric = {};	# number -> words
+
+open (my $fh, '<', 'wordcounts.txt');
+while (my $line = <$fh>) {
+	chomp($line);
+	$wordcounts->{$line} = join('', sort split('', $line));
+
+	my @w = split(' ', $line);
+	my $val = 0;
+	my $i = 0;
+	my $number_of_words = scalar(@w);
+	while ($i < $number_of_words) {
+		if ($w[$i] eq 'and') {
+			$i++;
+			next;
+		}
+		if (defined($dict{$w[$i]})) {
+			$val += $dict{$w[$i]};
+			$i++;
+			if ($i < $number_of_words && defined($dict{$w[$i]})) {
+				$val *= $dict{$w[$i]};
+				$i++;
+			}
+		} elsif ($w[$i] =~ /(\w+?)\-(\w+)/) {
+			$val += $dict{$1} + $dict{$2};
+			$i++;
+		}
+	}
+	$numeric->{$val} = $line;
+
+	#print "$line, $val\n";
+}
+close($fh);
+#print Dumper($wordcounts);
+
+my $scrambled = {};	# _normalized -> scrambled
+open ($fh, '<', 'scrambled.txt');
+while (my $line = <$fh>) {
+	chomp($line);
+	my $normalized = join('', sort split('', $line));
+	push(@{$scrambled->{$normalized}}, $line);
+}
+close($fh);
+
+#print Dumper($scrambled);
+
+# $wordcounts 	# words   -> _normalized
+# $numeric 	# number -> words
+# $scrambled 	# _normalized -> scrambled
+
+for my $n (sort {$a <=> $b} keys %$numeric) {
+	my $w = $numeric->{$n};
+	my $normalized = $wordcounts->{$w};
+	my $s = join('|', @{$scrambled->{$normalized}});
+	print "$n,$w,$s,'$normalized'\n";
+}
