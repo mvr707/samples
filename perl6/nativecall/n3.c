@@ -21,6 +21,17 @@ int my_mod(int n, int m) {
 
 /* ================================================== */
 
+void calculate(int *i, int *j)
+{
+	int sum = *i + *j;
+	int diff = abs(*i - *j);
+
+	*i = sum;
+	*j = diff;
+}
+
+/* ================================================== */
+
 char *get_name()
 {
 	static char buf[100];

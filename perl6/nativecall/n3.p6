@@ -23,6 +23,16 @@ say "---";
 
 ##################################################################
 
+sub calculate(int32 is rw, int32 is rw)
+	is native('./libn3.so') { };
+my int32 ($x, $y) = (3,45);
+say "$x and $y";
+calculate($x, $y);
+say "$x and $y";
+say "---";
+
+##################################################################
+
 sub get-name() returns Str
 	is symbol('get_name')
 	is native('./libn3.so') { };
