@@ -36,7 +36,7 @@ say "---";
 
 ##################################################################
 
-my class SumDiff is repr('CStruct') {
+class SumDiff is repr('CStruct') {
 	has int32 $.sum;
 	has int32 $.diff;
 };
