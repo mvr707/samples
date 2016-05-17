@@ -21,18 +21,12 @@ class Rectangle {
 
 void Rectangle::set_values (int x, int y) {
 
-	// cout << "width = " << x << endl;
-	// cout << "height = " << y << endl;
-
 	width = x;
 	height = y;
 
 }
 
 int Rectangle::area() {
-
-	// cout << "width = " << width << endl;
-	// cout << "height = " << height << endl;
 
 	return width * height;
 }
