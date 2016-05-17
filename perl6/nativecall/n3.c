@@ -64,6 +64,7 @@ SumDiff *sumdiff (int i, int j) {
 	return result;					/* return &result; */
 }
 	/* Notes: 
+	
 	   1) Internally C function can return structured data to another C function, 
 	      but must return structure pointer to Perl6. Why? May be that is the current implementation 
 	   2) For data integrity, "calloc" is better than "static" declaration of "result"
@@ -82,7 +83,7 @@ char **get_list(int size)
   		my_array[i] = calloc(strlen(buf), 1);
 		sprintf(my_array[i], "%s", buf);
 	}
-	return my_array;
+	return my_array; /* array of strings */
 }
 
 /* ================================================== */
