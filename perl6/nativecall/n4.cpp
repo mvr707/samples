@@ -11,22 +11,22 @@ int hello(int i)
 }
 
 class Rectangle {
-	int width, height;
+	double width, height;
 
 	public:
-		void set_values (int,int);
-		int area();
+		void set_values(double,double);
+		double area();
 };
 
 
-void Rectangle::set_values (int x, int y) {
+void Rectangle::set_values (double x, double y) {
 
 	width = x;
 	height = y;
 
 }
 
-int Rectangle::area() {
+double Rectangle::area() {
 
 	return width * height;
 }
