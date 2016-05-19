@@ -46,6 +46,19 @@ say "---";
 
 ##################################################################
 
+sub sumup(int32, CArray[int32]) returns int32
+	is native('./libn3.so') { * }
+
+my $a = CArray[int32].new(10, 20, 30);
+$a[3] = 40;
+
+my $sumup = sumup($a.elems, $a);
+
+say "sumup is $sumup";
+say "---";
+
+##################################################################
+
 class SumDiff is repr('CStruct') {
 	has int32 $.sum;
 	has int32 $.diff;
