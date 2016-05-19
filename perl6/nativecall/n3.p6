@@ -36,12 +36,17 @@ say "---";
 sub get-name-by-value() returns Str
 	is symbol('get_name')
 	is native('./libn3.so') { };
+sub print-name(Pointer[int8])
+	is symbol('print_name')
+	is native('./libn3.so') { };
+
 my $n1 = get-name-by-value();
 my $n2 = get-name-by-value();
 my $n3 = get-name-by-value();
 say $n1;
 say $n2;
 say $n3;
+
 say "---";
 
 
@@ -54,6 +59,9 @@ $n3 = get-name-by-ref();
 say $n1;
 say $n2;
 say $n3;
+print-name($n1);
+print-name($n2);
+print-name($n3);
 say "---";
 
 ##################################################################

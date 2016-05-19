@@ -42,6 +42,11 @@ char *get_name()
 	return buf;
 }
 
+void print_name(char *p)
+{
+	printf("%s\n", p);
+}
+
 /* ================================================== */
 
 int sumup (int length, int array[])
