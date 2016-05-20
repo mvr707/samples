@@ -101,17 +101,33 @@ SumDiff *sumdiff (int i, int j) {
 
 /* ================================================== */
 
-char **get_list(int size)
+char **create_list(int size)
 {
 	char **my_array = calloc(size, sizeof(char *));
+	
+	printf("size of (char *) = %d\n", (int)sizeof(char *));
+
+	printf("address of created array = 0x%lx\n", (unsigned long int) my_array);
 
 	for (int i=0; i < size; i++) {
 		char buf[100];
-		sprintf(buf, "all is well %d", i);
-  		my_array[i] = calloc(strlen(buf), 1);
+		sprintf(buf, "all is well %d - %d", i, rand());
+		int len = strlen(buf);
+  		my_array[i] = calloc(len, 1);
+		printf("myarray[%d] (address, content) = (0x%lx, 0x%lx) %d\n", i, (unsigned long int) (my_array + i), (unsigned long int)my_array[i], len);
 		sprintf(my_array[i], "%s", buf);
 	}
 	return my_array; /* array of strings */
+}
+
+void free_list(int size, char **p) 
+{
+	for (int i=0; i<size; i++) {
+		free(p[i]);
+		printf("free memory at 0x%lx\n", (unsigned long int) (p + i));
+	}
+	free(p);
+	printf("Finally, free memory at 0x%lx\n", (unsigned long int) p);
 }
 
 /* ================================================== */

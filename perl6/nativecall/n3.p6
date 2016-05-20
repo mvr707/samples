@@ -96,13 +96,20 @@ say "---";
 
 ##################################################################
 
-sub get-list(int32) returns CArray[Str]
-	is symbol('get_list')
+sub create-list(int32) returns CArray[Str]
+	is symbol('create_list')
+	is native('./libn3.so') { };
+sub free-list(int32, CArray[Str])
+	is symbol('free_list')
 	is native('./libn3.so') { };
 
-my $length = 3;
+my $length = 10;
 
-my CArray[Str] $list = get-list($length);
+my CArray[Str] $list = create-list($length);
 say nativesizeof($list);
 
 for ^$length { say $list[$_] };
+
+free-list($length, $list);
+
+##################################################################
