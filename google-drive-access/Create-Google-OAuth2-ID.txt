@@ -1,0 +1,65 @@
+
+Programmatic access to Google Docs
+===================================
+
+Earlier simple intgerface used to work...
+
+[eg]
+
+my $service = Net::Google::Spreadsheets->new(
+	username => 'mygoogleaccount@example.com',
+	password => 'mypassword'
+);
+my @spreadsheets = $service->spreadsheets();
+
+[/eg]
+
+But that deos not work anymore. Now we need to use 'OAuth2' mechanism.
+Follow the steps...
+
+1) https://console.developers.google.com/
+2) Click "Credentials" on the left panel
+3) In the right panel "Create credentials" -> "OAuth client ID"
+4) Select "Application type" and "Create" and choose a "Name" and click "Create"
+5) Get "client_id" and "client_secret" (or download the JSON)
+
+
+[SNIP]
+
+use Net::Google::DataAPI::Auth::OAuth2;
+use Net::Google::Spreadsheets;
+use Storable; #to save and restore token for future use
+
+my $oauth2 = Net::Google::DataAPI::Auth::OAuth2->new(
+    client_id => '...',
+    client_secret => '...',
+    scope => ['http://spreadsheets.google.com/feeds/'],
+);
+
+if (-e 'google_spreadsheet.session') {
+        my $session = retrieve('google_spreadsheet.session');
+        my $restored_token = Net::OAuth2::AccessToken->session_thaw($session,
+            auto_refresh => 1,
+            profile => $oauth2->oauth2_webserver,
+        );
+        $oauth2->access_token($restored_token);
+} else {
+        my $url = $oauth2->authorize_url();
+        #you will need to put code here and receive token
+        print "OAuth URL, get code: $url\n";
+        use Term::Prompt;
+        my $code = prompt('x', 'paste the code: ', '', ''); 
+        my $token = $oauth2->get_access_token($code) or die;
+
+        #save token for future use
+        my $session = $token->session_freeze;
+        store($session, 'google_spreadsheet.session');
+}
+
+my $service = Net::Google::Spreadsheets->new(auth => $oauth2);
+
+my @spreadsheets = $service->spreadsheets();
+
+[/SNIP]
+
+
