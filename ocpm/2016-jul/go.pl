@@ -34,21 +34,15 @@ my $first_row = $dt->rowHashRef(0);
 my $last_row = $dt->rowHashRef($dt->lastRow);
 my $interest = $P - $last_row->{Sp};
 
-print "I (interest enarned) = $interest\n";
 my $dsr = $interest/$last_row->{Spn};
-
-my $dsr_1 = $interest/($last_row->{Sp} * Delta_Days(split("-", $first_row->{d}), split("-", $D)));
-my $dsr_2 = $interest/($last_row->{Sp} * Delta_Days(split("-", $last_row->{d}), split("-", $D)));
 
 my $dsr_adjust = $dsr * $adjust;
 
 print <<EOF;
+I (interest enarned) = $interest
 DSR (daily simple rate) = $dsr (${\(sprintf("APR %.4f", 365*100*$dsr))})
-
-DSR 1 (daily simple rate) = $dsr_1 (${\(sprintf("APR %.4f", 365*100*$dsr_1))})
-DSR 2 (daily simple rate) = $dsr_2 (${\(sprintf("APR %.4f", 365*100*$dsr_2))})
-
 equivalent compounded rate (ajusted per input) = $dsr_adjust (${\(sprintf("APR %.4f", 365*100*$dsr_adjust))})
+
 EOF
 
 $dt->addCol(0, 'si');
@@ -62,18 +56,6 @@ $dt->colsMap(sub { $_->[-1] = sprintf("%.2f", $_->[1] * (1 + $dsr)**$_->[2] - $_
 my $Cci = 0;
 $dt->addCol(0, 'Cci');
 $dt->colsMap(sub { $_->[-1] = sprintf("%.2f", ($Cci += $_->[-2])) });
-
-$dt->addCol(0, 'ci1');
-$dt->colsMap(sub { $_->[-1] = sprintf("%.2f", $_->[1] * (1 + $dsr_1)**$_->[2] - $_->[1]) });
-my $Cci1 = 0;
-$dt->addCol(0, 'Cci1');
-$dt->colsMap(sub { $_->[-1] = sprintf("%.2f", ($Cci1 += $_->[-2])) });
-
-$dt->addCol(0, 'ci2');
-$dt->colsMap(sub { $_->[-1] = sprintf("%.2f", $_->[1] * (1 + $dsr_2)**$_->[2] - $_->[1]) });
-my $Cci2 = 0;
-$dt->addCol(0, 'Cci2');
-$dt->colsMap(sub { $_->[-1] = sprintf("%.2f", ($Cci2 += $_->[-2])) });
 
 $dt->addCol(0, 'ci_adjust');
 $dt->colsMap(sub { $_->[-1] = sprintf("%.2f", $_->[1] * (1 + $dsr_adjust)**$_->[2] - $_->[1]) });
@@ -112,6 +94,7 @@ $final->addCol([@date_list], 'Date');
 # Data::Table::INNER_JOIN Data::Table::LEFT_JOIN Data::Table::RIGHT_JOIN Data::Table::FULL_JOIN
 
 print "===\n";
+<STDIN>;
 
 my $tab = $final->join($dt, Data::Table::FULL_JOIN, ['Date'], ['d'], {renameCol => 1});
 $tab -> reorder([qw/Date p ac_value/], {keepRest => 0});
@@ -133,3 +116,31 @@ $tab->colsMap(sub {
 });
 
 print Data::Table::normalize_column_widths($tab)->csv(1, {delimiter => '|'});
+
+<STDIN>;
+
+use GD::Graph::points;
+
+my $graph = GD::Graph::points->new(900, 600);
+$graph->set( 
+	bgclr		=> 'white',
+	transparent	=> 0,
+	x_label		=> 'Time',
+	x_label_skip 	=> 30,
+	x_labels_vertical => 1,
+	x_label_position => 0.5,
+	y_label		=> 'Value',
+	title		=> 'Account Value Over Time',
+	y_max_value	=> 500,
+	y_min_value	=> 0,
+	y_tick_number	=> 10,
+	y_label_skip	=> 1,
+) or die $graph->error;
+
+my $gd = $graph->plot($tab->colRefs([0,2]));
+open(my $img, '>', 'account.png') or die $!;
+binmode($img);
+print $img $gd->png;
+close($img);
+
+print "Graph of 'account value over time' is in 'account.png'\n";
